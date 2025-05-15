@@ -6,6 +6,8 @@
   <title>Nini´s Geburtstagsquiz 🥳</title>
   <!-- Confetti Library -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js" defer></script>
+  <!-- SortableJS for touch-friendly drag & drop -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; padding: 0; background: #121212; color: #e0e0e0; font-family: Arial, sans-serif; }
@@ -267,6 +269,10 @@
 
           uiDiv.append(container);
           uiDiv.append(poolDiv);
+          // Initialize touch-friendly drag & drop
+          const zoneLists = [...uiDiv.querySelectorAll('.zone-list')];
+          zoneLists.forEach(ul => Sortable.create(ul, { group: 'tier', animation: 150 }));
+          Sortable.create(uiDiv.querySelector('.pool-list'), { group: 'tier', animation: 150 });
           answerBtn.style.display = 'block';
         }
       }
