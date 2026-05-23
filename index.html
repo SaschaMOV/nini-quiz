@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050306">
+<title>Fall 0523, Der Kerzenmann</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050306;
+  --bg2:#0d0a0c;
+  --paper:#15110f;
+  --file:#1d1814;
+  --blood:#8b1a1a;
+  --blood-bright:#c73e2c;
+  --gold:#a08a3e;
+  --cream:#c8b89a;
+  --cream-d:#9a8c75;
+  --muted:#4a4248;
+  --tape-y:#c4a82f;
+  --tape-b:#0a0a0a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--cream);font-family:'Special Elite',cursive;overflow-x:hidden;-webkit-text-size-adjust:100%}
+
+/* === GRAIN + VIGNETTE + SCANLINES === */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:900;opacity:.55;mix-blend-mode:overlay
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 50% 40%,transparent 25%,rgba(0,0,0,.85) 100%);
+  pointer-events:none;z-index:901
+}
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:902;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 1px,transparent 1px,transparent 3px);
+  opacity:.6;mix-blend-mode:multiply}
+
+/* === SCREENS === */
+.screen{display:none;min-height:100vh;min-height:100dvh;align-items:center;justify-content:center;flex-direction:column;padding:2.5rem 1.5rem;position:relative;z-index:10}
+.screen.active{display:flex;animation:fadeUp .9s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* === CORNER DECO === */
+.corner{position:fixed;width:60px;height:60px;opacity:.18;z-index:5;pointer-events:none}
+.corner.tl{top:1.2rem;left:1.2rem;border-top:1.5px solid var(--blood);border-left:1.5px solid var(--blood)}
+.corner.tr{top:1.2rem;right:1.2rem;border-top:1.5px solid var(--gold);border-right:1.5px solid var(--gold)}
+.corner.bl{bottom:1.2rem;left:1.2rem;border-bottom:1.5px solid var(--gold);border-left:1.5px solid var(--gold)}
+.corner.br{bottom:1.2rem;right:1.2rem;border-bottom:1.5px solid var(--blood);border-right:1.5px solid var(--blood)}
+
+/* === AUDIO BUTTON === */
+.audio-toggle{position:fixed;top:1rem;right:1rem;z-index:920;background:var(--bg);border:1px solid var(--muted);color:var(--cream);
+  width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;
+  font-family:'Special Elite',cursive;transition:all .3s;opacity:.6}
+.audio-toggle:hover{opacity:1;border-color:var(--blood)}
+
+/* === PHONE NOTIF === */
+.phone-notif{position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-100%);z-index:925;
+  background:#1c1c1e;color:#fff;padding:.8rem 1.1rem;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:.82rem;display:flex;align-items:center;gap:.7rem;box-shadow:0 8px 24px rgba(0,0,0,.6);
+  opacity:0;transition:all .4s ease;min-width:260px;max-width:90vw;border:1px solid #2c2c2e}
+.phone-notif.show{transform:translateX(-50%) translateY(0);opacity:1}
+.phone-notif .icon{width:28px;height:28px;background:#c73e2c;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.phone-notif .text{flex:1;font-weight:600;font-size:.82rem;line-height:1.3}
+.phone-notif .text .sub{display:block;font-weight:400;opacity:.75;font-size:.75rem;margin-top:.1rem}
+.phone-notif .time{font-size:.7rem;opacity:.5}
+
+/* === TYPO === */
+.eyebrow{font-size:.68rem;letter-spacing:.32em;color:var(--blood-bright);text-transform:uppercase;margin-bottom:.6rem;text-align:center;font-family:'Courier Prime',monospace}
+.eyebrow.gold{color:var(--gold)}
+h1.hero{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,8vw,4.5rem);font-weight:900;line-height:.95;text-align:center;text-shadow:0 0 60px rgba(199,62,44,.3)}
+h1.hero .blood{color:var(--blood-bright)}
+h1.hero.glitch{position:relative}
+h1.hero.glitch::before,h1.hero.glitch::after{
+  content:attr(data-text);position:absolute;inset:0;text-align:center
+}
+h1.hero.glitch::before{color:var(--blood-bright);animation:glitch-1 4s infinite linear alternate-reverse;clip-path:polygon(0 20%,100% 20%,100% 35%,0 35%);transform:translate(-1px,0)}
+h1.hero.glitch::after{color:#3a6491;animation:glitch-2 3.5s infinite linear alternate-reverse;clip-path:polygon(0 60%,100% 60%,100% 75%,0 75%);transform:translate(1px,0)}
+@keyframes glitch-1{0%,90%,100%{clip-path:polygon(0 20%,100% 20%,100% 35%,0 35%)}93%{clip-path:polygon(0 45%,100% 45%,100% 60%,0 60%);transform:translate(-2px,1px)}96%{clip-path:polygon(0 5%,100% 5%,100% 15%,0 15%);transform:translate(2px,-1px)}}
+@keyframes glitch-2{0%,90%,100%{clip-path:polygon(0 60%,100% 60%,100% 75%,0 75%)}93%{clip-path:polygon(0 30%,100% 30%,100% 45%,0 45%);transform:translate(2px,-1px)}96%{clip-path:polygon(0 80%,100% 80%,100% 95%,0 95%);transform:translate(-2px,1px)}}
+h2.room-title{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,5vw,2.2rem);font-weight:700;text-align:center;margin:.3rem 0;padding:0 .5rem;letter-spacing:.02em}
+.sub{font-size:.78rem;letter-spacing:.2em;color:var(--cream-d);margin-top:.4rem;text-align:center;font-family:'Courier Prime',monospace}
+.divider-tape{width:100%;max-width:580px;height:18px;margin:1.4rem 0;
+  background:repeating-linear-gradient(45deg,var(--tape-y) 0,var(--tape-y) 14px,var(--tape-b) 14px,var(--tape-b) 28px);
+  opacity:.6;position:relative}
+.divider-tape::before{content:'POLIZEI · ABSPERRUNG · POLIZEI · ABSPERRUNG ·';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Courier Prime',monospace;font-size:.6rem;color:#000;font-weight:700;letter-spacing:.2em;white-space:nowrap;overflow:hidden;mix-blend-mode:multiply;opacity:.7}
+
+/* === CASE FILE / CARD === */
+.file{background:var(--file);border:1px solid rgba(160,138,62,.18);padding:2rem 2.2rem;max-width:600px;width:100%;
+  box-shadow:0 18px 60px rgba(0,0,0,.7);position:relative;
+  background-image:linear-gradient(to bottom,transparent,transparent 47%,rgba(160,138,62,.04) 48%,transparent 49%);background-size:100% 22px}
+.file::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blood),var(--blood-bright),var(--blood))}
+.file::after{content:'';position:absolute;top:8px;left:8px;right:-8px;bottom:-8px;border:1px solid rgba(139,26,26,.15);pointer-events:none}
+
+.stamp{position:absolute;top:1rem;right:1rem;font-family:'Courier Prime',monospace;font-size:.62rem;letter-spacing:.2em;
+  color:var(--blood-bright);border:2px solid var(--blood-bright);padding:.18rem .55rem;
+  transform:rotate(8deg);opacity:.7;font-weight:700}
+
+.case-no{font-family:'Courier Prime',monospace;font-size:.7rem;letter-spacing:.2em;color:var(--cream-d);margin-bottom:.6rem;text-transform:uppercase}
+.case-meta{font-family:'Courier Prime',monospace;font-size:.72rem;color:var(--cream-d);margin-bottom:1.2rem;line-height:1.6}
+.case-meta strong{color:var(--cream);font-weight:400}
+.case-meta .label{color:var(--blood-bright);display:inline-block;min-width:5.5rem}
+
+/* === INPUT === */
+input[type=text],input[type=password]{
+  display:block;width:100%;background:transparent;border:none;border-bottom:1.5px solid var(--muted);
+  color:var(--cream);font-family:'Special Elite',cursive;font-size:1.08rem;letter-spacing:.18em;
+  padding:.75rem .2rem;text-align:center;outline:none;transition:border-color .3s;
+  touch-action:manipulation;-webkit-appearance:none;border-radius:0
+}
+input:focus{border-color:var(--blood-bright)}
+input::placeholder{color:var(--muted);font-size:.8rem;letter-spacing:.15em}
+
+/* === BUTTON === */
+.btn{
+  display:inline-block;margin-top:1.4rem;padding:.92rem 2.3rem;background:transparent;
+  border:1.5px solid var(--blood);color:var(--blood-bright);font-family:'Special Elite',cursive;
+  font-size:.78rem;letter-spacing:.26em;text-transform:uppercase;cursor:pointer;
+  transition:all .25s;position:relative;overflow:hidden;
+  touch-action:manipulation;min-height:48px
+}
+.btn::before{content:'';position:absolute;inset:0;background:var(--blood);transform:scaleX(0);transform-origin:left;transition:transform .25s ease;z-index:-1}
+.btn:hover::before,.btn:active::before{transform:scaleX(1)}
+.btn:hover,.btn:active{color:var(--cream)}
+
+/* === MSG === */
+.msg{min-height:1.2rem;font-size:.8rem;text-align:center;margin-top:.85rem;letter-spacing:.04em;transition:color .3s;max-width:460px;padding:0 .5rem;line-height:1.5}
+.msg.err{color:#b94040}
+.msg.ok{color:#7a9272}
+
+/* === DOTS === */
+.dots{display:flex;gap:7px;justify-content:center;margin-top:.85rem}
+.dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--muted);transition:all .3s}
+.dot.wrong{background:var(--blood);border-color:var(--blood);box-shadow:0 0 8px rgba(199,62,44,.5)}
+
+/* === PROGRESS === */
+.progress-wrap{width:100%;max-width:560px;margin-bottom:1.4rem}
+.progress-label{display:flex;justify-content:space-between;font-size:.6rem;color:var(--cream-d);letter-spacing:.14em;margin-bottom:.4rem;text-transform:uppercase;gap:.5rem;font-family:'Courier Prime',monospace}
+.progress-label .now{color:var(--blood-bright);text-align:right}
+.progress-bar{height:2px;background:rgba(255,255,255,.05);width:100%}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blood),var(--blood-bright));transition:width .8s ease}
+
+/* === STORY TEXT === */
+.story{font-size:.94rem;line-height:1.85;margin-bottom:1.4rem;color:var(--cream)}
+.story strong{color:var(--blood-bright);font-weight:normal}
+.story em{color:var(--gold);font-style:normal}
+
+/* === PUZZLE BOX === */
+.puzzle-box{
+  display:block;margin:1.2rem 0;padding:1.1rem 1.3rem;
+  background:rgba(139,26,26,.08);border:1px dashed rgba(199,62,44,.3);
+  font-size:1.1rem;letter-spacing:.18em;text-align:center;
+  color:var(--cream);font-family:'Courier Prime',monospace;line-height:1.7;
+  word-break:break-word
+}
+.puzzle-box.mono{letter-spacing:.32em;font-size:1.3rem;color:var(--blood-bright)}
+.puzzle-box.diary{text-align:left;letter-spacing:.02em;font-family:'Special Elite',cursive;font-style:italic;font-size:.94rem;line-height:1.95}
+.puzzle-box.diary .ich{color:var(--cream-d)}
+
+/* === ALBUM LIST === */
+.album-list{display:block;margin:1.2rem 0;padding:1rem 1.1rem;
+  background:rgba(160,138,62,.05);border:1px solid rgba(160,138,62,.18);
+  font-family:'Courier Prime',monospace;font-size:.82rem;line-height:1.5}
+.album-row{padding:.45rem 0;border-bottom:1px dotted rgba(160,138,62,.15);display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;align-items:start}
+.album-row:last-child{border-bottom:none}
+.album-row .n{color:var(--blood-bright)}
+.album-row .info{display:block;font-size:.7rem;color:var(--cream-d);margin-top:.15rem}
+
+/* === POLYBIUS === */
+.polybius{border-collapse:collapse;margin:1.1rem auto;font-family:'Courier Prime',monospace;font-size:1rem;
+  border:1px solid rgba(160,138,62,.3);background:rgba(160,138,62,.04)}
+.polybius th,.polybius td{padding:.55rem .55rem;text-align:center;border:1px solid rgba(160,138,62,.18);min-width:2.4rem}
+.polybius th{color:var(--blood-bright);font-weight:700;background:rgba(139,26,26,.1)}
+.polybius td{color:var(--cream)}
+.polybius-note{font-size:.72rem;color:var(--cream-d);text-align:center;margin-top:.4rem;font-style:italic;letter-spacing:.04em}
+
+/* === HINT === */
+.prompt{font-size:.86rem;color:var(--cream);margin-top:.8rem;text-align:center;letter-spacing:.02em}
+.prompt .blood{color:var(--blood-bright)}
+.hint{display:none;font-size:.82rem;color:var(--gold);margin-top:1rem;font-style:italic;text-align:left;line-height:1.6;padding:.75rem 1rem;background:rgba(160,138,62,.07);border-left:2px solid var(--gold);letter-spacing:.02em}
+.hint.show{display:block;animation:fadeIn .5s ease}
+.hint b{color:var(--cream);font-weight:normal}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.hint-text{font-size:.74rem;color:var(--cream-d);text-align:center;margin-top:.4rem;letter-spacing:.05em;font-style:italic}
+
+/* === VOICEMAIL BOX === */
+.voicemail{font-family:'Courier Prime',monospace;font-size:.84rem;line-height:1.7;
+  background:rgba(0,0,0,.4);border-left:3px solid var(--blood-bright);padding:1rem 1.1rem;margin:1rem 0;color:var(--cream-d)}
+.voicemail .static{color:var(--muted);font-style:italic}
+.voicemail .clear{color:var(--cream);font-style:normal}
+.voicemail .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;font-size:.7rem;color:var(--blood-bright);letter-spacing:.15em;text-transform:uppercase;font-weight:700}
+
+/* === FINALE === */
+.finale-text{font-family:'Playfair Display',serif;text-align:center;line-height:1.4}
+.finale-stage{opacity:0;transition:opacity 1.8s ease}
+.finale-stage.show{opacity:1}
+.gift-reveal{background:var(--file);border:1px solid var(--blood);padding:1.8rem 1.5rem;
+  margin:1.8rem auto;max-width:440px;position:relative;text-align:center}
+.gift-reveal::before{content:'🕯️';position:absolute;top:-1.2rem;left:50%;transform:translateX(-50%);background:var(--bg);padding:0 .6rem;font-size:1.5rem}
+.gift-label{font-size:.64rem;color:var(--blood-bright);letter-spacing:.26em;text-transform:uppercase;margin-bottom:.7rem;font-family:'Courier Prime',monospace}
+.gift-text{font-family:'Playfair Display',serif;font-size:1.3rem;font-style:italic;color:var(--cream);line-height:1.5}
+.gift-text strong{color:var(--blood-bright);font-weight:normal}
+.message-placeholder{margin-top:2rem;padding:1.5rem 1.2rem;border:1px dashed rgba(160,138,62,.25);
+  font-size:.84rem;color:var(--muted);font-style:italic;max-width:520px;line-height:1.7;text-align:center}
+
+/* === ANIM === */
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.shake{animation:shake .38s ease}
+@keyframes flashOk{0%,100%{background:var(--file)}50%{background:rgba(122,146,114,.12)}}
+.flash-ok{animation:flashOk .55s ease}
+@keyframes flicker{0%,89%,91%,93%,100%{opacity:1}90%{opacity:.45}92%{opacity:.7}}
+.flicker{animation:flicker 5s infinite}
+@keyframes pulse-blood{0%,100%{box-shadow:0 0 0 0 rgba(199,62,44,0)}50%{box-shadow:0 0 0 6px rgba(199,62,44,.08)}}
+.pulse-blood{animation:pulse-blood 1.4s infinite}
+@keyframes heartbeat{0%,100%{transform:scale(1)}10%{transform:scale(1.04)}20%{transform:scale(1)}30%{transform:scale(1.04)}40%{transform:scale(1)}}
+.heartbeat{animation:heartbeat 1.4s ease-in-out infinite}
+
+/* === MOBILE === */
+@media (max-width:640px){
+  .screen{padding:1.8rem 1rem}
+  .file{padding:1.4rem 1.1rem}
+  .file::after{display:none}
+  .corner{width:42px;height:42px;opacity:.14}
+  .puzzle-box{padding:.95rem .8rem;font-size:1rem;letter-spacing:.14em;margin:1rem 0}
+  .puzzle-box.mono{font-size:1.15rem;letter-spacing:.24em}
+  .puzzle-box.diary{font-size:.88rem;padding:.95rem .9rem}
+  .album-list{font-size:.74rem;padding:.85rem .9rem}
+  .album-row .info{font-size:.65rem}
+  .polybius{font-size:.88rem}
+  .polybius th,.polybius td{padding:.4rem .3rem;min-width:1.9rem}
+  .voicemail{font-size:.76rem;padding:.85rem .95rem}
+  .story{font-size:.9rem;line-height:1.75}
+  .prompt{font-size:.82rem}
+  .hint{font-size:.78rem;padding:.65rem .85rem}
+  .btn{padding:.9rem 1.7rem;font-size:.72rem;letter-spacing:.2em;margin-top:1.2rem}
+  .progress-label{font-size:.55rem;letter-spacing:.1em}
+  .stamp{font-size:.55rem;top:.7rem;right:.7rem;padding:.15rem .4rem}
+  .case-meta{font-size:.68rem}
+  .gift-reveal{padding:1.4rem 1.1rem}
+  .gift-text{font-size:1.1rem}
+  .phone-notif{font-size:.76rem;min-width:240px}
+  .audio-toggle{width:38px;height:38px;font-size:.9rem;top:.7rem;right:.7rem}
+}
+@media (max-width:380px){
+  .screen{padding:1.4rem .7rem}
+  .file{padding:1.1rem .85rem}
+  .corner{width:32px;height:32px}
+  .puzzle-box{padding:.8rem .65rem;font-size:.92rem;letter-spacing:.1em}
+  .puzzle-box.mono{font-size:1rem;letter-spacing:.18em}
+  .puzzle-box.diary{font-size:.82rem}
+  .album-list{font-size:.7rem}
+  .polybius{font-size:.78rem}
+  .polybius th,.polybius td{padding:.32rem .22rem;min-width:1.5rem}
+  .btn{padding:.82rem 1.3rem;font-size:.68rem;letter-spacing:.18em}
+  .voicemail{font-size:.72rem}
+}
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<button class="audio-toggle" id="audioBtn" onclick="toggleAudio()" title="Audio an/aus">🔇</button>
+
+<div class="phone-notif" id="phoneNotif">
+  <div class="icon">📞</div>
+  <div class="text">1 verpasster Anruf<span class="sub">Unbekannter Anrufer</span></div>
+  <div class="time" id="phoneNotifTime">23:??</div>
+</div>
+
+<!-- ============ SCREEN 0, PASSWORT ============ -->
+<div class="screen active" id="s0">
+  <div class="eyebrow">Vertraulich · BKA-Archiv</div>
+  <h1 class="hero glitch flicker" data-text="FALL 0523">FALL <span class="blood">0523</span></h1>
+  <p class="sub">Der Kerzenmann</p>
+  <div class="divider-tape"></div>
+  <div style="width:100%;max-width:320px">
+    <input type="text" inputmode="decimal" id="pw" placeholder="Zugangscode (TT.MM)" maxlength="10"
+           autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+           onkeydown="if(event.key==='Enter')checkPw()">
+    <p class="hint-text">🕯️ Tipp: Heute ist dein Tag.</p>
+  </div>
+  <p class="msg err" id="pw-msg"></p>
+  <button class="btn" onclick="checkPw()">Zugang anfordern</button>
+</div>
+
+<!-- ============ SCREEN 1, INTRO ============ -->
+<div class="screen" id="s1">
+  <div class="file" style="max-width:600px">
+    <span class="stamp">VERTRAULICH</span>
+    <div class="case-no">EINGANG · 23.05.2026 · 22:47 UHR</div>
+    <p class="story" id="intro-text"></p>
+    <div class="voicemail" id="vm-box" style="display:none">
+      <div class="header"><span>📞 SPRACHNACHRICHT</span><span id="vm-time">22:31</span></div>
+      <div id="vm-content"></div>
+    </div>
+    <div style="text-align:center;margin-top:1.5rem">
+      <button class="btn" onclick="go(2)">Akte 0001 öffnen →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 2, AKTE 0001 / HANNOVER 1996 ============ -->
+<div class="screen" id="s2">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>▶ Akte 1 von 6</span><span class="now">Hannover · 1996</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:16%"></div></div>
+  </div>
+  <div class="file" id="c1">
+    <span class="stamp">UNGELÖST</span>
+    <div class="case-no">AKTE Nr. 0001</div>
+    <div class="case-meta">
+      <div><span class="label">DATUM:</span> 23.05.1996 · 23:47 Uhr</div>
+      <div><span class="label">TATORT:</span> Hannover, Linden-Nord</div>
+      <div><span class="label">OPFER:</span> w · 20 Jahre · Geburtstag</div>
+    </div>
+    <p class="story">Sie wollte gerade ihre <strong>20 Kerzen</strong> auspusten, nur eine davon erlosch. Die Forensik fand Spuren eines unbekannten Wirkstoffs in ihrem Glas. Auf einer Serviette neben ihrer Hand: eine Reihe von Zahlen, in zittriger Schrift gekritzelt. Ihre letzte Botschaft.</p>
+    <span class="puzzle-box mono">7 · 5 · 2 · 21 · 18 · 20 · 19 · 20 · 1 · 7</span>
+    <p class="story" style="text-align:center;font-style:italic;color:var(--cream-d);font-size:.86rem">A=1, B=2, C=3 ... Z=26</p>
+    <p class="prompt">Welches <span class="blood">Wort</span> versuchte sie zu schreiben?</p>
+    <p class="hint" id="h1">💡 Wandle jede Zahl in den entsprechenden Buchstaben um (7=G, 5=E, 2=B, 21=U ...). Es ist ein deutsches Wort mit <b>10 Buchstaben</b>, das genau zum Tatort passt.</p>
+  </div>
+  <div style="width:100%;max-width:340px;margin-top:1.4rem">
+    <input type="text" id="a1" placeholder="Antwort ..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')check(1)">
+    <div class="dots" id="d1"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <p class="msg err" id="m1"></p>
+  <button class="btn" onclick="check(1)">Überprüfen</button>
+</div>
+
+<!-- ============ SCREEN 3, AKTE 0002 / HAMBURG 2001 ============ -->
+<div class="screen" id="s3">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>▶ Akte 2 von 6</span><span class="now">Hamburg · 2001</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+  </div>
+  <div class="file" id="c2">
+    <span class="stamp">UNGELÖST</span>
+    <div class="case-no">AKTE Nr. 0002</div>
+    <div class="case-meta">
+      <div><span class="label">DATUM:</span> 23.05.2001 · 21:13 Uhr</div>
+      <div><span class="label">TATORT:</span> Hamburg, St. Pauli</div>
+      <div><span class="label">OPFER:</span> w · 20 Jahre · Geburtstag</div>
+    </div>
+    <p class="story">Sie wurde vor dem Spiegel gefunden, den <strong>Lippenstift noch in der Hand</strong>. In ihren letzten Sekunden hatte sie eine Nachricht hinterlassen. Aber er war schlauer, sie schrieb in Spiegelschrift, und er hat den Text zusätzlich verschoben. Niemand konnte ihn entschlüsseln.</p>
+    <span class="puzzle-box mono">O F U U B I D T</span>
+    <p class="story" style="text-align:center;font-style:italic;color:var(--cream-d);font-size:.86rem">Spiegel + Verschiebung</p>
+    <p class="prompt">Was hat sie wirklich <span class="blood">geschrieben</span>?</p>
+    <p class="hint" id="h2">💡 Zwei Schritte:<br>1) Lies die Buchstaben <b>von hinten nach vorne</b> → TDIBUUFO<br>2) Verschiebe jeden Buchstaben <b>um 1 zurück</b> im Alphabet (T→S, D→C ...)<br>Das Ergebnis ist ein deutsches Wort.</p>
+  </div>
+  <div style="width:100%;max-width:340px;margin-top:1.4rem">
+    <input type="text" id="a2" placeholder="Antwort ..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')check(2)">
+    <div class="dots" id="d2"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <p class="msg err" id="m2"></p>
+  <button class="btn" onclick="check(2)">Überprüfen</button>
+</div>
+
+<!-- ============ SCREEN 4, AKTE 0003 / FRANKFURT 2008 ============ -->
+<div class="screen" id="s4">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>▶ Akte 3 von 6</span><span class="now">Frankfurt · 2008</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+  </div>
+  <div class="file" id="c3">
+    <span class="stamp">UNGELÖST</span>
+    <div class="case-no">AKTE Nr. 0003</div>
+    <div class="case-meta">
+      <div><span class="label">DATUM:</span> 23.05.2008 · 22:55 Uhr</div>
+      <div><span class="label">TATORT:</span> Frankfurt am Main, Bornheim</div>
+      <div><span class="label">OPFER:</span> w · 20 Jahre · Geburtstag</div>
+    </div>
+    <p class="story">Auf ihrem Nachttisch lag ihr <strong>Tagebuch</strong>, aufgeschlagen beim letzten Eintrag von dem Morgen. Sie schrieb wie immer, scheinbar normal, vier kurze Zeilen über ihren Tag. Doch zwischen den Zeilen versteckte sie eine Botschaft. Eine, die nur jemand findet, der genau hinsieht.</p>
+    <div class="puzzle-box diary">
+      <span class="ich">Ich </span>Bekomme heute Besuch. Aber er hat noch keinen Namen.<br>
+      <span class="ich">Ich </span>Lausche an der Wand. Es klopft. Es klopft wieder.<br>
+      <span class="ich">Ich </span>Unterhalte mich mit dem Spiegel. Er antwortet mir.<br>
+      <span class="ich">Ich </span>Trauere um die Person, die ich morgen nicht mehr sein werde.
+    </div>
+    <p class="prompt">Welches <span class="blood">Wort</span> hat sie versteckt?</p>
+    <p class="hint" id="h3">💡 Jede Zeile beginnt mit „Ich", das ist Ablenkung. Schau dir die <b>ersten Buchstaben der zweiten Wörter</b> an: <b>B</b>ekomme, <b>L</b>ausche, <b>U</b>nterhalte, <b>T</b>rauere.</p>
+  </div>
+  <div style="width:100%;max-width:340px;margin-top:1.4rem">
+    <input type="text" id="a3" placeholder="Antwort ..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')check(3)">
+    <div class="dots" id="d3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <p class="msg err" id="m3"></p>
+  <button class="btn" onclick="check(3)">Überprüfen</button>
+</div>
+
+<!-- ============ SCREEN 5, AKTE 0004 / BERLIN 2014 ============ -->
+<div class="screen" id="s5">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>▶ Akte 4 von 6</span><span class="now">Berlin · 2014</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+  </div>
+  <div class="file" id="c4">
+    <span class="stamp">UNGELÖST</span>
+    <div class="case-no">AKTE Nr. 0004</div>
+    <div class="case-meta">
+      <div><span class="label">DATUM:</span> 23.05.2014 · 23:30 Uhr</div>
+      <div><span class="label">TATORT:</span> Berlin, Friedrichshain · Plattenladen</div>
+      <div><span class="label">OPFER:</span> w · 20 Jahre · Geburtstag</div>
+    </div>
+    <p class="story">Plattenverkäuferin, gefunden zwischen ihren eigenen Regalen. Auf dem Boden lagen <strong>sechs Schallplatten</strong>, akkurat in einer Reihe ausgelegt. Aber eine davon, die hatte sie nie besessen. Er hatte sie mitgebracht. Sein Markenzeichen. Nach jeder Tat lässt er eine Platte da, die nicht passt.</p>
+    <div class="album-list">
+      <div class="album-row"><span class="n">01</span><span><b>TODESLIED</b><span class="info">23.05.2010 · 23 Tracks</span></span></div>
+      <div class="album-row"><span class="n">02</span><span><b>KERZENSTUMPF</b><span class="info">23.05.2011 · 23 Tracks</span></span></div>
+      <div class="album-row"><span class="n">03</span><span><b>SCHWARZER MOND</b><span class="info">23.05.2012 · 23 Tracks</span></span></div>
+      <div class="album-row"><span class="n">04</span><span><b>ELEVATE</b><span class="info">12.11.2009 · 12 Tracks</span></span></div>
+      <div class="album-row"><span class="n">05</span><span><b>GRABMOND</b><span class="info">23.05.2013 · 23 Tracks</span></span></div>
+      <div class="album-row"><span class="n">06</span><span><b>LETZTER ATEM</b><span class="info">23.05.2014 · 23 Tracks</span></span></div>
+    </div>
+    <p class="prompt">Welches <span class="blood">Album</span> gehört nicht hierher?</p>
+    <p class="hint" id="h4">💡 Achte auf die <b>Veröffentlichungsdaten</b> und die <b>Track-Anzahl</b>: 5 Alben wurden alle am 23.05. veröffentlicht und haben 23 Tracks. Eines bricht das Muster komplett.</p>
+  </div>
+  <div style="width:100%;max-width:340px;margin-top:1.4rem">
+    <input type="text" id="a4" placeholder="Album-Titel ..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')check(4)">
+    <div class="dots" id="d4"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <p class="msg err" id="m4"></p>
+  <button class="btn" onclick="check(4)">Überprüfen</button>
+</div>
+
+<!-- ============ SCREEN 6, AKTE 0005 / BREMEN 2019 ============ -->
+<div class="screen" id="s6">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>▶ Akte 5 von 6</span><span class="now">Bremen · 2019</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:83%"></div></div>
+  </div>
+  <div class="file" id="c5">
+    <span class="stamp">UNGELÖST</span>
+    <div class="case-no">AKTE Nr. 0005</div>
+    <div class="case-meta">
+      <div><span class="label">DATUM:</span> 23.05.2019 · 23:21 Uhr</div>
+      <div><span class="label">TATORT:</span> Bremen, Neustadt · WG-Zimmer</div>
+      <div><span class="label">OPFER:</span> w · 20 Jahre · Geburtstag</div>
+    </div>
+    <p class="story">Gefunden hinter <strong>verschlossener Tür</strong>. Auf ihrer Tapete hatte sie mit Lippenstift ein 5x5-Raster gezeichnet, und darunter eine Zahlenfolge, fünf Paare. Es schien wie ein Code. Sie war eine begeisterte Krypto-Studentin. Niemand konnte ihn knacken.</p>
+    <table class="polybius">
+      <tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+      <tr><th>1</th><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td></tr>
+      <tr><th>2</th><td>F</td><td>G</td><td>H</td><td>I/J</td><td>K</td></tr>
+      <tr><th>3</th><td>L</td><td>M</td><td>N</td><td>O</td><td>P</td></tr>
+      <tr><th>4</th><td>Q</td><td>R</td><td>S</td><td>T</td><td>U</td></tr>
+      <tr><th>5</th><td>V</td><td>W</td><td>X</td><td>Y</td><td>Z</td></tr>
+    </table>
+    <p class="polybius-note">Erste Zahl = Zeile, zweite Zahl = Spalte</p>
+    <span class="puzzle-box mono" style="margin-top:.6rem">25 · 15 · 42 · 55 · 15</span>
+    <p class="prompt">Welches <span class="blood">Wort</span> verbirgt sich im Code?</p>
+    <p class="hint" id="h5">💡 Jedes Paar bedeutet <b>Zeile-Spalte</b> im Raster. Z.B. „25" = Zeile 2, Spalte 5 = <b>K</b>. Decodiere die fünf Paare.</p>
+  </div>
+  <div style="width:100%;max-width:340px;margin-top:1.4rem">
+    <input type="text" id="a5" placeholder="Antwort ..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')check(5)">
+    <div class="dots" id="d5"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <p class="msg err" id="m5"></p>
+  <button class="btn" onclick="check(5)">Überprüfen</button>
+</div>
+
+<!-- ============ SCREEN 7, AKTE 0006 / MÜNCHEN 2024 ============ -->
+<div class="screen" id="s7">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>▶ Akte 6 von 6 · FINAL</span><span class="now">München · 2024</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:99%"></div></div>
+  </div>
+  <div class="file" id="c6">
+    <span class="stamp">UNGELÖST</span>
+    <div class="case-no">AKTE Nr. 0006, JÜNGSTE TAT</div>
+    <div class="case-meta">
+      <div><span class="label">DATUM:</span> 23.05.2024 · 23:58 Uhr</div>
+      <div><span class="label">TATORT:</span> München, Schwabing</div>
+      <div><span class="label">OPFER:</span> w · 20 Jahre · Geburtstag</div>
+    </div>
+    <p class="story">Auf ihrem Handy fand die Polizei eine <strong>Sprachaufnahme der letzten Minuten</strong>. Sie hatte sie offenbar selbst gestartet Notruf? Beweis? Niemand weiß. Man hört Schritte, dann Atem, dann Husten. Dann laut und deutlich, ein einzelnes Wort. Die Polizei vermutete, es war ein Code an einen vertrauten Freund.</p>
+    <div class="voicemail">
+      <div class="header"><span>🎙️ AUFNAHME · 23:58:14</span><span>0:47</span></div>
+      <div><span class="static">[Schritte im Flur]</span></div>
+      <div><span class="static">[Tür öffnet sich]</span></div>
+      <div><span class="static">[verzerrtes Atmen]</span></div>
+      <div><span class="static">[Husten ... Würgen]</span></div>
+      <div><span class="clear">„ ___________ "</span> <span class="static">[laut, klar]</span></div>
+      <div><span class="static">[Aufnahme bricht ab]</span></div>
+    </div>
+    <p class="prompt">Welches <span class="blood">Wort</span> hat sie zuletzt gerufen?</p>
+    <p class="hint" id="h6">💡 Es ist kein Hilferuf, kein Name. Es ist ein <b>einzelnes deutsches Wort</b>, das man oft sagt, wenn jemand niest, der Code zwischen ihr und ihren besten Freunden. Du sagst es ständig.</p>
+  </div>
+  <div style="width:100%;max-width:340px;margin-top:1.4rem">
+    <input type="text" id="a6" placeholder="Antwort ..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')check(6)">
+    <div class="dots" id="d6"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+  <p class="msg err" id="m6"></p>
+  <button class="btn pulse-blood" onclick="check(6)">Akte schließen</button>
+</div>
+
+<!-- ============ SCREEN 8, FINALE (dark, quiet) ============ -->
+<div class="screen" id="s8">
+  <div style="text-align:center;max-width:600px;width:100%">
+    <div class="finale-stage" id="fin1">
+      <p class="finale-text" style="font-size:clamp(2rem,7vw,3.6rem);color:var(--cream);font-weight:900;letter-spacing:.05em">.</p>
+    </div>
+    <div class="finale-stage" id="fin2" style="margin-top:2rem">
+      <p class="finale-text" style="font-size:clamp(1.4rem,5vw,2.4rem);color:var(--cream);letter-spacing:.06em">Du hast überlebt.</p>
+    </div>
+    <div class="finale-stage" id="fin3" style="margin-top:2.5rem">
+      <p class="finale-text" style="font-size:clamp(1rem,3.5vw,1.4rem);color:var(--cream-d);letter-spacing:.04em;font-style:italic;line-height:1.7">
+        Heute ist dein <strong style="color:var(--blood-bright);font-style:normal;font-weight:normal">20. Geburtstag</strong>, Nini.<br>
+        Es war alles für dich.
+      </p>
+    </div>
+    <div class="finale-stage" id="fin4" style="margin-top:2.5rem">
+      <div class="gift-reveal">
+        <div class="gift-label">Dein echtes Geschenk</div>
+        <div class="gift-text">
+          Such dir ein Konzert deiner Wahl aus <br>
+          <strong>egal wer, egal wo, egal wann.</strong><br>
+          Ich zahle. Wir gehen zusammen. 🎫
+        </div>
+      </div>
+    </div>
+    <div class="finale-stage" id="fin5" style="margin-top:2.5rem">
+      <button class="btn" onclick="restart()">Akte neu öffnen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  KONFIGURATION, Antworten (case-insensitive, Varianten OK)
+// ============================================================
+const CFG = {
+  pw: ['23.05','23,05','23.5','23,5','2305','23.05.'],
+  // Akte 1: A=1 Cipher 7-5-2-21-18-20-19-20-1-7 → GEBURTSTAG
+  r1: ['geburtstag','geburstag','geburtstagg'],
+  // Akte 2: Reverse OFUUBIDT → TDIBUUFO, Caesar -1 → SCHATTEN
+  r2: ['schatten','schatten.','der schatten'],
+  // Akte 3: Acrostichon 2. Wörter B-L-U-T → BLUT
+  r3: ['blut'],
+  // Akte 4: ELEVATE bricht das 23.05/23-Tracks Muster
+  r4: ['elevate','big time rush','bigtimerush','btr'],
+  // Akte 5: Polybius 25-15-42-55-15 → K-E-R-Z-E
+  r5: ['kerze','kerzen','eine kerze'],
+  // Akte 6: Niesen-Wort → HATSCHI
+  r6: ['hatschi','hatschii','hatschiii','hatchi','hatschee']
+};
+
+const introText = `Heute ist dein <strong>20. Geburtstag</strong>. 22:47 Uhr. Du sitzt vor deinem Laptop. Eis schmilzt neben dir. Eine Geburtstagstorte. <em>20 Kerzen</em>. Eine davon flackert.\n\nDein Handy vibriert. Auf dem Sperrbildschirm: <strong>„1 verpasster Anruf."</strong> Du hast aber keinen Anruf bekommen.`;
+
+const vmText = `<span class="static">[Statisches Rauschen]</span>\n<span class="clear">„Du ..."</span> <span class="static">[verzerrt, bricht ab]</span>\n<span class="clear">„... bist die siebte."</span>\n<span class="static">[Kinderlachen im Hintergrund]</span>\n<span class="static">[Aufnahme endet]</span>`;
+
+const tries = {1:0,2:0,3:0,4:0,5:0,6:0};
+let audioStarted = false;
+let audioMuted = true;
+let audioCtx = null;
+let staticGain = null;
+let heartbeatInterval = null;
+
+// ============================================================
+//  AUDIO (Web Audio API, kein File-Upload nötig)
+// ============================================================
+function initAudio(){
+  if(audioStarted) return;
+  try{
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    // Static white noise
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * 0.5;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    // Filter for low-pass to make it less harsh
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+    staticGain = audioCtx.createGain();
+    staticGain.gain.value = 0; // start muted
+    noise.connect(filter);
+    filter.connect(staticGain);
+    staticGain.connect(audioCtx.destination);
+    noise.start();
+    // Heartbeat
+    heartbeatInterval = setInterval(()=>{ if(!audioMuted) playHeartbeat(); }, 1300);
+    audioStarted = true;
+  }catch(e){ console.log('Audio init failed:', e); }
+}
+
+function playHeartbeat(){
+  if(!audioCtx || audioMuted) return;
+  const now = audioCtx.currentTime;
+  // first thump
+  const o1 = audioCtx.createOscillator();
+  const g1 = audioCtx.createGain();
+  o1.frequency.value = 55;
+  g1.gain.setValueAtTime(0, now);
+  g1.gain.linearRampToValueAtTime(0.18, now+0.03);
+  g1.gain.exponentialRampToValueAtTime(0.001, now+0.18);
+  o1.connect(g1); g1.connect(audioCtx.destination);
+  o1.start(now); o1.stop(now+0.2);
+  // second thump
+  const o2 = audioCtx.createOscillator();
+  const g2 = audioCtx.createGain();
+  o2.frequency.value = 50;
+  g2.gain.setValueAtTime(0, now+0.22);
+  g2.gain.linearRampToValueAtTime(0.13, now+0.25);
+  g2.gain.exponentialRampToValueAtTime(0.001, now+0.42);
+  o2.connect(g2); g2.connect(audioCtx.destination);
+  o2.start(now+0.22); o2.stop(now+0.44);
+}
+
+function toggleAudio(){
+  if(!audioStarted) initAudio();
+  audioMuted = !audioMuted;
+  if(staticGain) staticGain.gain.value = audioMuted ? 0 : 0.05;
+  document.getElementById('audioBtn').textContent = audioMuted ? '🔇' : '🔊';
+}
+
+function fadeOutAudio(){
+  audioMuted = true;
+  if(staticGain) staticGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime+1.5);
+  document.getElementById('audioBtn').textContent = '🔇';
+}
+
+// ============================================================
+//  CORE
+// ============================================================
+function checkPw(){
+  const v = document.getElementById('pw').value.trim().toLowerCase();
+  if(CFG.pw.includes(v)){
+    initAudio();
+    // auto-unmute on first password unlock (user interaction)
+    audioMuted = false;
+    if(staticGain) staticGain.gain.value = 0.05;
+    document.getElementById('audioBtn').textContent = '🔊';
+    go(1);
+    typewrite('intro-text', introText, ()=>{
+      setTimeout(()=>{
+        document.getElementById('vm-box').style.display='block';
+        typewrite('vm-content', vmText);
+      }, 600);
+    });
+  } else {
+    const el = document.getElementById('pw');
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake'),400);
+    document.getElementById('pw-msg').textContent = 'Falscher Zugangscode.';
+  }
+}
+
+function go(n){
+  for(let i=0;i<=8;i++){
+    const el=document.getElementById('s'+i);
+    if(el) el.classList.remove('active');
+  }
+  document.getElementById('s'+n).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showMissedCall(){
+  const notif = document.getElementById('phoneNotif');
+  const time = `23:${String(20+Math.floor(Math.random()*38)).padStart(2,'0')}`;
+  document.getElementById('phoneNotifTime').textContent = time;
+  notif.classList.add('show');
+  setTimeout(()=>notif.classList.remove('show'), 3500);
+}
+
+function typewrite(id, html, callback){
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  let i = 0;
+  function tick(){
+    if(i>=html.length){ if(callback) callback(); return; }
+    if(html[i]==='<'){
+      const end = html.indexOf('>',i);
+      if(end>-1){ el.innerHTML += html.slice(i,end+1); i=end+1; setTimeout(tick,0); return; }
+    }
+    el.innerHTML += html[i++];
+    setTimeout(tick, html[i-1]==='\n'?60:20);
+  }
+  tick();
+}
+
+function check(room){
+  const val = document.getElementById('a'+room).value.trim().toLowerCase();
+  const answers = CFG['r'+room];
+  const msgEl = document.getElementById('m'+room);
+  const cardEl = document.getElementById('c'+room);
+
+  if(val && answers.includes(val)){
+    msgEl.className='msg ok'; msgEl.textContent='✓ Akte gelöst.';
+    cardEl.classList.add('flash-ok');
+    if(document.activeElement) document.activeElement.blur();
+    setTimeout(()=>{
+      if(room < 6){
+        showMissedCall();
+        setTimeout(()=>go(room+2), 800);
+      } else {
+        // Final room → finale
+        triggerFinale();
+      }
+    },800);
+  } else {
+    const inp = document.getElementById('a'+room);
+    inp.classList.add('shake');
+    setTimeout(()=>inp.classList.remove('shake'),400);
+    tries[room]++;
+    const dotsEl = document.getElementById('d'+room);
+    if(dotsEl.children[tries[room]-1]) dotsEl.children[tries[room]-1].classList.add('wrong');
+
+    if(tries[room]>=3){
+      const hintEl = document.getElementById('h'+room);
+      if(hintEl) hintEl.classList.add('show');
+      msgEl.className='msg err'; msgEl.textContent='Schau dir den Tipp oben an 💡';
+    } else {
+      const left=3-tries[room];
+      msgEl.className='msg err'; msgEl.textContent=`Falsch, noch ${left} Versuch${left!==1?'e':''}.`;
+    }
+  }
+}
+
+function triggerFinale(){
+  // Audio fades out for silent finale
+  fadeOutAudio();
+  go(8);
+  // Reveal stages slowly
+  const stages = ['fin1','fin2','fin3','fin4','fin5'];
+  const delays = [600, 2200, 4800, 7800, 10500];
+  stages.forEach((id, idx)=>{
+    setTimeout(()=>{
+      document.getElementById(id).classList.add('show');
+    }, delays[idx]);
+  });
+}
+
+function restart(){
+  for(let i=1;i<=6;i++){
+    tries[i]=0;
+    const a=document.getElementById('a'+i); if(a) a.value='';
+    const m=document.getElementById('m'+i); if(m){ m.textContent=''; m.className='msg err'; }
+    const d=document.getElementById('d'+i); if(d) Array.from(d.children).forEach(x=>x.classList.remove('wrong'));
+    const c=document.getElementById('c'+i); if(c) c.classList.remove('flash-ok');
+    const h=document.getElementById('h'+i); if(h) h.classList.remove('show');
+  }
+  document.querySelectorAll('.finale-stage').forEach(el=>el.classList.remove('show'));
+  document.getElementById('pw').value='';
+  document.getElementById('pw-msg').textContent='';
+  document.getElementById('vm-box').style.display='none';
+  go(0);
+}
+</script>
+</body>
+</html>
